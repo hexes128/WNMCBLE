@@ -15,6 +15,7 @@ import android.bluetooth.BluetoothGattService;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -67,39 +68,12 @@ public class MainActivity extends AppCompatActivity {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, 1);
         }
-        sendpass = findViewById(R.id.button);
-        startpolling = findViewById(R.id.button3);
-        byteData.add(time);
-        byteData.add(power);
+        IntentFilter filter = new IntentFilter();
+        filter.addAction("connectionstate");
+        filter.addAction("qrvalue");
 
-        byteData.add(swstate);
+        registerReceiver(gattUpdateReceiver, filter);
 
-        gv = (Global) getApplicationContext();
-        Gattmap = new HashMap<>();
-        CharaMap = new HashMap<>();
-
-        GattTimeout = new HashMap<>();
-
-        GattDataFlag = new HashMap<>();
-
-
-        sendpass.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                for (BluetoothGatt gatt : Gattmap.keySet()) {
-
-
-                    GattDataFlag.put(gatt, 123);
-                    BluetoothGattCharacteristic characteristic = CharaMap.get(gatt);
-                    characteristic.setValue(password);
-                    gatt.writeCharacteristic(characteristic);
-
-
-                }
-
-
-            }
-        });
 
     }
 
@@ -108,15 +82,28 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onReceive(Context context, Intent intent) {
             final String action = intent.getAction();
-            if (BluetoothLeService.ACTION_GATT_CONNECTED.equals(action)) {
+       switch (action.trim()){
 
-            } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
+           case ("connectionstate"):{
+               if(intent.getExtras().get("newState").equals("connected")){
 
-            } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
 
-            } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
+               }
+               if(intent.getExtras().get("newState").equals("disconnected")){
 
-            }
+               }
+               Toast.makeText(getApplicationContext(),intent.getExtras().get("devicename")+" "+intent.getExtras().get("newState")+"",Toast.LENGTH_SHORT).show();
+               break;
+           }
+           case ("scanqr"):{
+
+               Toast.makeText(getApplicationContext(),intent.getExtras().get("newState")+"",Toast.LENGTH_SHORT).show();
+               break;
+           }
+
+       }
+
+            Toast.makeText(getApplicationContext(), action, Toast.LENGTH_SHORT).show();
         }
     };
 

@@ -14,6 +14,9 @@ import android.util.Log;
 
 import androidx.annotation.Nullable;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
 
 // A service that interacts with the BLE device via the Android BLE API.
@@ -24,6 +27,8 @@ public class BluetoothLeService extends Service {
     private BluetoothAdapter bluetoothAdapter;
     private String bluetoothDeviceAddress;
     private BluetoothGatt bluetoothGatt;
+    private HashMap<BluetoothGatt,BluetoothGattCharacteristic> CharacteristicHashMap = new HashMap<>();
+
     private int connectionState = STATE_DISCONNECTED;
 
     private static final int STATE_DISCONNECTED = 0;
@@ -48,21 +53,17 @@ public class BluetoothLeService extends Service {
     private final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-            String intentAction;
-            if (newState == BluetoothProfile.STATE_CONNECTED) {
-                intentAction = ACTION_GATT_CONNECTED;
-                connectionState = STATE_CONNECTED;
-//                broadcastUpdate(intentAction);
-                Log.i(TAG, "Connected to GATT server.");
-                Log.i(TAG, "Attempting to start service discovery:" +
-                        bluetoothGatt.discoverServices());
 
+            if (newState == BluetoothProfile.STATE_CONNECTED) {
+
+                        gatt.discoverServices();
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                intentAction = ACTION_GATT_DISCONNECTED;
-                connectionState = STATE_DISCONNECTED;
-                Log.i(TAG, "Disconnected from GATT server.");
-                broadcastUpdate(intentAction);
+
+                sendBroadcast(new Intent("connectionstate").putExtra("newState","disconnected").
+                        putExtra("devicename",gatt.getDevice().getName()));
+
             }
+
         }
 
         @Override
@@ -71,20 +72,31 @@ public class BluetoothLeService extends Service {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 Log.w(TAG, "onServicesDiscovered received: " + status);
 //                broadcastUpdate(ACTION_GATT_SERVICES_DISCOVERED);
+                BluetoothGattCharacteristic chara = gatt.getService(UUID.fromString("0000ffe0-0000-1000-8000-00805f9b34fb")).getCharacteristic(UUID.fromString("0000ffe1-0000-1000-8000-00805f9b34fb"));
+                if (chara != null) {
+                    gatt.setCharacteristicNotification(chara, true);
+
+                    CharacteristicHashMap.put(gatt,chara);
+                    sendBroadcast(new Intent("connectionstate").putExtra("newState","connected").
+                            putExtra("devicename",gatt.getDevice().getName()));
+                }
             } else {
 
             }
         }
-
         @Override
-        // Result of a characteristic read operation
-        public void onCharacteristicRead(BluetoothGatt gatt,
-                                         BluetoothGattCharacteristic characteristic,
-                                         int status) {
-            if (status == BluetoothGatt.GATT_SUCCESS) {
-                broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
-            }
+        public void onCharacteristicChanged (BluetoothGatt gatt, BluetoothGattCharacteristic characteristic){
+
+            byte[] rec = characteristic.getValue();
+
+
+            String s = new String(rec).trim();
+            sendBroadcast(new Intent("scanqr").
+                    putExtra("devicename",gatt.getDevice().getName()).putExtra("qrvalue",s));
+
         }
+
+
 
     };
 
