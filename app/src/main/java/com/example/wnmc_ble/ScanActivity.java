@@ -35,7 +35,7 @@ public class ScanActivity extends AppCompatActivity {
     private SwipeRefreshLayout rescan;
     private BluetoothLeScanner BleScanner;
     private BluetoothAdapter BleAdapter;
-    private HashMap<BluetoothDevice, Boolean> ScanedDevice;
+    private List<BluetoothDevice> deviceList = new ArrayList<>();
     Global gv;
     private RecyclerView mRecyclerView;
     private MyAdapter mAdapter;
@@ -46,7 +46,7 @@ public class ScanActivity extends AppCompatActivity {
         setContentView(R.layout.activity_scan);
         gv = (Global) getApplicationContext();
         rescan = findViewById(R.id.refresh);
-        ScanedDevice = new HashMap<>();
+
         BleScanner = ((BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE)).getAdapter().getBluetoothLeScanner();
         BleAdapter = ((BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE)).getAdapter();
         final LinearLayoutManager layoutManager = new LinearLayoutManager(this);
@@ -54,10 +54,8 @@ public class ScanActivity extends AppCompatActivity {
         mRecyclerView = findViewById(R.id.recyclerView1);
         mRecyclerView.setLayoutManager(layoutManager);
 
-        mAdapter = new MyAdapter(ScanedDevice);
+        mAdapter = new MyAdapter(deviceList);
         mRecyclerView.setAdapter(mAdapter);
-
-
 
 
         mAdapter.notifyDataSetChanged();
@@ -73,7 +71,6 @@ public class ScanActivity extends AppCompatActivity {
     public boolean onKeyDown(int keyCode, KeyEvent event) {//捕捉返回鍵
         if ((keyCode == KeyEvent.KEYCODE_BACK)) {
 
-         gv.checkeddevice.addAll(ScanedDevice.keySet().stream().filter(x->ScanedDevice.get(x)).collect(Collectors.toList()));
 
             setResult(1);
         }
@@ -102,8 +99,8 @@ public class ScanActivity extends AppCompatActivity {
         public void onLeScan(BluetoothDevice bluetoothDevice, int i, byte[] bytes) {
 
 
-            if (!ScanedDevice.keySet().contains(bluetoothDevice) && bluetoothDevice.getName()!=null) {
-                ScanedDevice.put(bluetoothDevice, false);
+            if (!deviceList.contains(bluetoothDevice) && bluetoothDevice.getName() != null) {
+                deviceList.add(bluetoothDevice);
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -116,25 +113,24 @@ public class ScanActivity extends AppCompatActivity {
     };
 
 
-
     public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
-        private HashMap<BluetoothDevice, Boolean> mScandevice;
+        private List<BluetoothDevice> mdeviceList;
 
 
-        public MyAdapter(HashMap<BluetoothDevice, Boolean> Scandevice) {
-            mScandevice = Scandevice;
+        public MyAdapter(List<BluetoothDevice> deviceList) {
+            mdeviceList = deviceList;
         }
 
         public class ViewHolder extends RecyclerView.ViewHolder {
             public TextView device_name;
             public TextView device_address;
-            public CheckBox checkBox;
+
 
             public ViewHolder(View v) {
                 super(v);
                 device_name = v.findViewById(R.id.device_name);
                 device_address = v.findViewById(R.id.device_address);
-                checkBox = v.findViewById(R.id.checkBox);
+
             }
         }
 
@@ -144,33 +140,34 @@ public class ScanActivity extends AppCompatActivity {
             View v = LayoutInflater.from(parent.getContext())
                     .inflate(R.layout.scandevicecardview, parent, false);
             ViewHolder vh = new ViewHolder(v);
+
+            vh.itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    int position = vh.getAdapterPosition();
+                    gv.choosedevice = mdeviceList.get(position);
+                    setResult(1);
+                    finish();
+
+                }
+            });
+
             return vh;
         }
 
 
         public void onBindViewHolder(final ViewHolder holder, final int position) {
 
-            final List<BluetoothDevice> devicelist = new ArrayList<>(mScandevice.keySet());
 
+            holder.device_name.setText(mdeviceList.get(position).getName());
+            holder.device_address.setText(mdeviceList.get(position).getAddress());
 
-            holder.checkBox.setClickable(false);
-            holder.device_name.setText(devicelist.get(position).getName());
-            holder.device_address.setText(devicelist.get(position).getAddress());
-
-
-            holder.itemView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    mScandevice.put(devicelist.get(position), !holder.checkBox.isChecked());
-                    holder.checkBox.setChecked(!holder.checkBox.isChecked());
-                }
-            });
 
         }
 
         @Override
         public int getItemCount() {
-            return mScandevice.size();
+            return mdeviceList.size();
         }
     }
 }

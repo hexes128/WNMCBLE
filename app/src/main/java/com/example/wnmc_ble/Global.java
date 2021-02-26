@@ -10,6 +10,6 @@ import java.util.List;
 
 public class Global extends Application {
 
-   public List<BluetoothDevice> checkeddevice=new ArrayList<>();
+ public BluetoothDevice choosedevice;
 
 }
