@@ -169,6 +169,7 @@ devicename.setText(gatt.getDevice().getName());
 
 
             String s = new String(rec).trim();
+            Log.e(gatt.getDevice().getName(),gatt.getDevice().getAddress()+" "+Arrays.toString(rec));
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {

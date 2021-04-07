@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 public class ScanActivity extends AppCompatActivity {
     private SwipeRefreshLayout rescan;
     private BluetoothLeScanner BleScanner;
-    private BluetoothAdapter BleAdapter;
+    private BluetoothAdapter BleAdapter;//白手起家第一步
     private List<BluetoothDevice> deviceList = new ArrayList<>();
     Global gv;
     private RecyclerView mRecyclerView;
@@ -67,15 +67,7 @@ public class ScanActivity extends AppCompatActivity {
         });
     }
 
-    @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {//捕捉返回鍵
-        if ((keyCode == KeyEvent.KEYCODE_BACK)) {
 
-
-            setResult(1);
-        }
-        return super.onKeyDown(keyCode, event);
-    }
 
     public void Scan() {
 //        BleScanner.startScan(scanCallback);
